@@ -182,16 +182,47 @@ func (h *TestHandler) FormBinder(c *gin.Context) {
 	}, true, 0))
 }
 
+func sanitizeFilename(filename string) string {
+	// Remove informações de caminho e retorna apenas o nome do arquivo
+	safeName := filepath.Base(filename)
+	// Remove caracteres especiais e espaços
+	re := regexp.MustCompile(`[^\w\-. ]`)
+	safeName = re.ReplaceAllString(safeName, "")
+
+	// Limita o tamanho do nome do arquivo (opcional)
+	if len(safeName) > 100 {
+		safeName = safeName[:100]
+	}
+
+	// Retorna o nome seguro
+	return safeName
+}
+
 func (h *TestHandler) FileBinder(c *gin.Context) {
-	file, _ := c.FormFile("file")
-	err := c.SaveUploadedFile(file, "file")
+	// Obtém o arquivo enviado pelo formulário
+	file, err := c.FormFile("file")
 	if err != nil {
-		c.AbortWithStatusJSON(http.StatusInternalServerError,
-			helper.GenerateBaseResponseWithError(nil, false, helper.ValidationError, err))
+		c.AbortWithStatusJSON(http.StatusBadRequest, helper.GenerateBaseResponseWithError(nil, false, helper.ValidationError, err))
 		return
 	}
+
+	// Sanitiza o nome do arquivo
+	safeFilename := sanitizeFilename(file.Filename)
+	// Gera um nome único para evitar colisões
+	uniqueFilename := uuid.New().String() + "_" + safeFilename
+
+	// Define o diretório de upload (certifique-se de que este diretório exista e seja gravável)
+	uploadDir := "uploads/"
+	// Salva o arquivo no diretório definido
+	err = c.SaveUploadedFile(file, filepath.Join(uploadDir, uniqueFilename))
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusInternalServerError, helper.GenerateBaseResponseWithError(nil, false, helper.ValidationError, err))
+		return
+	}
+
+	// Retorna a resposta com sucesso
 	c.JSON(http.StatusOK, helper.GenerateBaseResponse(gin.H{
 		"result": "FileBinder",
-		"file":   file.Filename,
+		"file":   uniqueFilename,
 	}, true, 0))
 }
