@@ -3,6 +3,8 @@ package common
 import (
 	"math"
 	"math/rand"
+	"crypto/rand"
+	"math/big"
 	"regexp"
 	"strconv"
 	"strings"
@@ -105,14 +107,22 @@ func GeneratePassword() string {
 	return string(inRune)
 }
 
-func GenerateOtp() string {
+func GenerateOtp() (string, error) {
 	cfg := config.GetConfig()
-	rand.Seed(time.Now().UnixNano())
-	min := int(math.Pow(10, float64(cfg.Otp.Digits-1)))   // 10^d-1 100000
-	max := int(math.Pow(10, float64(cfg.Otp.Digits)) - 1) // 999999 = 1000000 - 1 (10^d) -1
+	min := int64(1)
+	max := int64(1)
+	for i := 0; i < cfg.Otp.Digits; i++ {
+		max *= 10
+	}
+	max--
 
-	var num = rand.Intn(max-min) + min
-	return strconv.Itoa(num)
+	nBig, err := rand.Int(rand.Reader, big.NewInt(max-min+1))
+	if err != nil {
+		return "", err
+	}
+
+	num := nBig.Int64() + min
+	return strconv.FormatInt(num, 10), nil
 }
 
 func HasUpper(s string) bool {
