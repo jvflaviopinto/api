@@ -107,7 +107,7 @@ func RegisterRoutes(r *gin.Engine, cfg *config.Config) {
 		router.CarModelProperty(carModelProperties, cfg)
 		router.CarModelComment(carModelComments, cfg)
 
-		r.Static("/static", "./uploads")
+		
 
 		r.GET("/metrics", gin.WrapH(promhttp.Handler()))
 	}
