@@ -160,33 +160,50 @@ func (h *FileHandler) GetByFilter(c *gin.Context) {
 }
 
 func saveUploadedFile(file *multipart.FileHeader, directory string) (string, error) {
-	// test.txt -> 95239855629856.txt
+	// Gera um nome de arquivo aleatório
 	randFileName := uuid.New()
 	err := os.MkdirAll(directory, os.ModePerm)
 	if err != nil {
 		return "", err
 	}
+	
+	// Obtem o nome e a extensão do arquivo
 	fileName := file.Filename
 	fileNameArr := strings.Split(fileName, ".")
 	fileExt := fileNameArr[len(fileNameArr)-1]
 	fileName = fmt.Sprintf("%s.%s", randFileName, fileExt)
 	dst := fmt.Sprintf("%s/%s", directory, fileName)
 
+	// Abre o arquivo de origem
 	src, err := file.Open()
 	if err != nil {
 		return "", err
 	}
-	defer src.Close()
+	defer func() {
+		if closeErr := src.Close(); closeErr != nil {
+			// Log ou trate o erro de fechamento, se necessário
+			fmt.Printf("Erro ao fechar o arquivo de origem: %v\n", closeErr)
+		}
+	}()
 
+	// Cria o arquivo de destino
 	out, err := os.Create(dst)
 	if err != nil {
 		return "", err
 	}
-	defer out.Close()
+	defer func() {
+		if closeErr := out.Close(); closeErr != nil {
+			// Log ou trate o erro de fechamento, se necessário
+			fmt.Printf("Erro ao fechar o arquivo de destino: %v\n", closeErr)
+		}
+	}()
 
+	// Copia o conteúdo do arquivo de origem para o destino
 	_, err = io.Copy(out, src)
 	if err != nil {
 		return "", err
 	}
+
 	return fileName, nil
 }
+
