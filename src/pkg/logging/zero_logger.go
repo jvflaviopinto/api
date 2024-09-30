@@ -48,7 +48,7 @@ func (l *zeroLogger) Init() {
 		zerolog.ErrorStackMarshaler = pkgerrors.MarshalStack
 		fileName := fmt.Sprintf("%s%s-%s.%s",l.cfg.Logger.FilePath,time.Now().Format("2006-01-02"),uuid.New(),"log")
 
-		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0666)
+		file, err := os.OpenFile(fileName, os.O_CREATE|os.O_APPEND|os.O_WRONLY, 0600)
 		if err != nil {
 			panic("could not open log file")
 		}
